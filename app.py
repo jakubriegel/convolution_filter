@@ -1,3 +1,4 @@
+import sys
 import time
 from typing import Callable
 
@@ -19,10 +20,10 @@ def run_timed(task: Callable[[], None]) -> int:
     return elapsed
 
 
-def app() -> None:
-    elapsed = run_timed(lambda: conv_from_file('img.jpg', MATRIX['blur1']))
+def app(img_file: str, matrix: str) -> None:
+    elapsed = run_timed(lambda: conv_from_file(img_file, MATRIX[matrix]))
     print(f'computation time {elapsed}ms')
 
 
 if __name__ == '__main__':
-    app()
+    app(sys.argv[0], sys.argv[1])

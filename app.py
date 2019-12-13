@@ -26,4 +26,4 @@ def app(img_file: str, matrix: str) -> None:
 
 
 if __name__ == '__main__':
-    app(sys.argv[0], sys.argv[1])
+    app(sys.argv[1], sys.argv[2])

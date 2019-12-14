@@ -21,7 +21,8 @@ def run_timed(task: Callable[[], None]) -> int:
 
 
 def app(img_file: str, matrix: str) -> None:
-    elapsed = run_timed(lambda: conv_from_file(img_file, MATRIX[matrix]))
+    def run(): conv_from_file(img_file, MATRIX[matrix])
+    elapsed = run_timed(run)
     print(f'computation time {elapsed}ms')
 
 

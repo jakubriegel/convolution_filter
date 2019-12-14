@@ -1,17 +1,20 @@
+from typing import List
+
 import numpy as np
 from PIL import Image
 
 from convolutionfilter.conv import Conv
 
 
-def conv_from_file(img_file: str, matrix: np.ndarray) -> None:
+def conv_from_file(img_file: str, matrix: List[List[int]]) -> None:
     img = np.asarray(Image.open(img_file))
-    conv(img, matrix)
+    conv(img, matrix, 6)
 
 
-def conv(img: np.ndarray, matrix: np.ndarray) -> None:
-    f = Conv(img, matrix)
-    f.save_filtered_image()
+def conv(img: np.ndarray, matrix: List[List[int]], number_of_workers: int = 1) -> None:
+    f = Conv(img, matrix, number_of_workers)
+    f.apply()
+    f.save_result()
 
 
 MATRIX = {

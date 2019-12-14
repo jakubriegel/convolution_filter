@@ -8,7 +8,7 @@ from convolutionfilter.conv import Conv
 
 def conv_from_file(img_file: str, matrix: List[List[int]]) -> None:
     img = np.asarray(Image.open(img_file))
-    conv(img, matrix, 6)
+    conv(img, matrix, 8)
 
 
 def conv(img: np.ndarray, matrix: List[List[int]], number_of_workers: int = 1) -> None:

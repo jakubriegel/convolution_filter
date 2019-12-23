@@ -11,10 +11,11 @@ class Conv:
     EXTENSION = '.ppm'
     RESULT_FILE_NAME = f'result{EXTENSION}'
 
-    def __init__(self, img: np.ndarray, matrix: np.ndarray, number_of_workers: int) -> None:
+    def __init__(self, img: np.ndarray, matrix: np.ndarray, number_of_workers: int, iterations: int) -> None:
         self._img = img
         self._matrix = matrix
         self._number_of_workers = number_of_workers
+        self._iterations = iterations
 
         self._new_img = None
         self._manager = _WorkersManager()
@@ -36,7 +37,7 @@ class Conv:
         print(f'worker {n} {start}-{start + self._chunk}')
         # noinspection PyUnresolvedReferences
         result: _WorkerResult = self._manager.result(chunk, len(self._img[0]))
-        worker = _ConvWorker(n, self._img[start:start + chunk], self._matrix, result)
+        worker = _ConvWorker(n, self._iterations, self._img[start:start + chunk], self._matrix, result)
         worker.start()
         self._workers.append((worker, result))
 

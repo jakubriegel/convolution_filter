@@ -32,31 +32,42 @@ _WorkersManager.register('result', _WorkerResult)
 class _ConvWorker(Process):
 
     def __init__(
-            self, n: int, data: np.ndarray, matrix: np.ndarray, result: _WorkerResult
+            self, n: int, runs: int, data: np.ndarray, matrix: np.ndarray, result: _WorkerResult
     ) -> None:
         super().__init__(name=f'worker {n}')
+        self._runs = runs
         self._data = data
         self._matrix = matrix
         self._result = result
 
         height = len(data)
         width = len(data[0])
-        self._height = range(1, height)
-        self._width = range(1, width)
-        self._current_gen = np.pad(self._data, ((1, 1), (1, 1), (0, 0)), 'edge')
-        self._next_gen = np.empty((height+2, width+2, 3), dtype=np.uint8)
+        self._height = range(1, height+1)
+        self._width = range(1, width+1)
+        self._current_iter = np.pad(self._data, ((1, 1), (1, 1), (0, 0)), 'edge')
+        self._next_iter = np.empty((height + 2, width + 2, 3), dtype=np.uint8)
 
     def run(self) -> None:
+        self._iterations()
+
+    def _iterations(self):
+        for _ in range(0, self._runs):
+            self._iteration()
+        self._result.copy_from(self._current_iter)
+
+    def _iteration(self):
         self._process_rows()
-        self._result.copy_from(self._next_gen)
+        t = self._current_iter
+        self._current_iter = self._next_iter
+        self._next_iter = t
 
     def _process_rows(self) -> None:
         for i in self._height:
-            self._process_row(i, self._current_gen[i-1:i+2])
+            self._process_row(i, self._current_iter[i - 1:i + 2])
 
     def _process_row(self, i: int, row: np.ndarray) -> None:
         for j in self._width:
-            self._next_gen[i][j] = self._process_pixel(row[0:3, j-1:j+2])
+            self._next_iter[i][j] = self._process_pixel(row[0:3, j - 1:j + 2])
 
     def _process_pixel(self, pixel: np.ndarray) -> np.ndarray:
         return np.array([self._calculate_pixel(pixel[0:3, 0:3, i]) for i in (0, 1, 2)], dtype=np.uint8)

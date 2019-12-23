@@ -1,3 +1,4 @@
+from math import ceil
 from typing import List, Tuple
 
 import numpy as np
@@ -7,7 +8,7 @@ from convolutionfilter.worker import _WorkersManager, _ConvWorker, _WorkerResult
 
 
 class Conv:
-    EXTENSION = '.jpg'
+    EXTENSION = '.ppm'
     RESULT_FILE_NAME = f'result{EXTENSION}'
 
     def __init__(self, img: np.ndarray, matrix: List[List[int]], number_of_workers: int) -> None:
@@ -18,27 +19,24 @@ class Conv:
         self._new_img = None
         self._manager = _WorkersManager()
         self._workers: List[Tuple[_ConvWorker, _WorkerResult]] = []
-        self._chunk = int(len(self._img) / self._number_of_workers)
+        self._chunk = int(ceil(len(self._img) / self._number_of_workers))
 
     def apply(self):
         self._start_workers()
         self._join_workers()
 
     def _start_workers(self):
-        for n in range(0, self._number_of_workers):
-            self._start_worker(n)
+        processed_rows = 0
+        for n in range(0, self._number_of_workers-1):
+            self._start_worker(n, processed_rows, self._chunk)
+            processed_rows += self._chunk
+        self._start_worker(self._number_of_workers-1, processed_rows, len(self._img) - processed_rows)
 
-    def _start_worker(self, n: int):
-        start = n * self._chunk + 1
+    def _start_worker(self, n: int, start: int, chunk: int):
         print(f'worker {n} {start}-{start + self._chunk}')
         # noinspection PyUnresolvedReferences
-        result: _WorkerResult = self._manager.result(self._chunk, len(self._img[0]))
-        worker = _ConvWorker(
-            n,
-            self._img[start:start + self._chunk],
-            self._matrix,
-            result
-        )
+        result: _WorkerResult = self._manager.result(chunk, len(self._img[0]))
+        worker = _ConvWorker(n, self._img[start:start + chunk+1], self._matrix, result)
         worker.start()
         self._workers.append((worker, result))
 

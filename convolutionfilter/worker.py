@@ -41,24 +41,29 @@ class _ConvWorker(Process):
         self._matrix = matrix
         self._result = result
 
+        self._row_len = len(data[0])
+
     def run(self) -> None:
         self._process_rows()
 
-    def _process_rows(self):
-        y_range = range(1, len(self._data) - 1)
-        x_range = range(0, len(self._data[0]) - 1)
-        for i in y_range:
-            new_row = np.empty((len(self._data[0]), 3), dtype=np.uint8)
-            for j in x_range:
-                new_row[j] = self._process_pixel(i, j)
+    def _process_rows(self) -> None:
+        for i in range(1, len(self._data) - 1):
+            new_row = self._process_row(self._data[i - 1:i + 2])
             self._result.set_row(i, new_row)
 
-    def _process_pixel(self, y: int, x: int) -> np.ndarray:
+    def _process_row(self, row: np.ndarray) -> np.ndarray:
+        new_row = np.empty((self._row_len, 3), dtype=np.uint8)
+        for i in range(1, self._row_len-1):
+            new_row[i] = self._process_pixel(row[0:4, i-1:i+2])
+        return new_row
+
+    def _process_pixel(self, pixel: []) -> np.ndarray:
         total = np.array([0, 0, 0], dtype=np.int16)
         weights = 0
-        for i in (-1, 0, 1):
-            for j in (-1, 0, 1):
-                weights += self._matrix[i+1][j+1]
-                total += self._matrix[i+1][j+1] * self._data[y+i][x+i]
+        for i in (0, 1, 2):
+            for j in (0, 1, 2):
+                weight = self._matrix[i][j]
+                weights += weight
+                total += weight * pixel[i][j]
 
         return (total / weights).astype('uint8')

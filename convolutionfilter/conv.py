@@ -11,7 +11,7 @@ class Conv:
     EXTENSION = '.ppm'
     RESULT_FILE_NAME = f'result{EXTENSION}'
 
-    def __init__(self, img: np.ndarray, matrix: List[List[int]], number_of_workers: int) -> None:
+    def __init__(self, img: np.ndarray, matrix: np.ndarray, number_of_workers: int) -> None:
         self._img = img
         self._matrix = matrix
         self._number_of_workers = number_of_workers

@@ -36,7 +36,7 @@ class Conv:
         print(f'worker {n} {start}-{start + self._chunk}')
         # noinspection PyUnresolvedReferences
         result: _WorkerResult = self._manager.result(chunk, len(self._img[0]))
-        worker = _ConvWorker(n, self._img[start:start + chunk+1], self._matrix, result)
+        worker = _ConvWorker(n, self._img[start:start + chunk], self._matrix, result)
         worker.start()
         self._workers.append((worker, result))
 

@@ -6,9 +6,9 @@ from PIL import Image
 from convolutionfilter.conv import Conv
 
 
-def conv_from_file(img_file: str, matrix: List[List[int]]) -> None:
+def conv_from_file(img_file: str, matrix: List[List[int]], number_of_workers: int) -> None:
     img = np.asarray(Image.open(img_file))
-    conv(img, matrix, 8)
+    conv(img, matrix, number_of_workers)
 
 
 def conv(img: np.ndarray, matrix: List[List[int]], number_of_workers: int = 1) -> None:

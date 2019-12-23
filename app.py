@@ -20,11 +20,11 @@ def run_timed(task: Callable[[], None]) -> int:
     return elapsed
 
 
-def app(img_file: str, matrix: str) -> None:
-    def run(): conv_from_file(img_file, MATRIX[matrix])
+def app(img_file: str, matrix: str, workers: int) -> None:
+    def run(): conv_from_file(img_file, MATRIX[matrix], workers)
     elapsed = run_timed(run)
     print(f'computation time {elapsed}ms')
 
 
 if __name__ == '__main__':
-    app(sys.argv[1], sys.argv[2])
+    app(sys.argv[1], sys.argv[2], int(sys.argv[3]))

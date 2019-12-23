@@ -41,11 +41,11 @@ class _ConvWorker(Process):
         self._result = result
 
         self._height = len(data)
-        self.width = len(data[0])
+        self._width = len(data[0])
         self._current_gen = self._data
         self._next_gen = self._empty_gen()
 
-    def _empty_gen(self): return np.empty((self._height, self.width, 3), dtype=np.uint8)
+    def _empty_gen(self): return np.empty((self._height, self._width, 3), dtype=np.uint8)
 
     def run(self) -> None:
         self._process_rows()
@@ -59,9 +59,9 @@ class _ConvWorker(Process):
             self._next_gen[i] = new_row
 
     def _process_row(self, row: np.ndarray) -> np.ndarray:
-        new_row = np.empty((self.width, 3), dtype=np.uint8)
+        new_row = np.empty((self._width, 3), dtype=np.uint8)
         new_row[0] = self._process_pixel(row[0:4, 0:1])
-        for i in range(1, self.width):
+        for i in range(1, self._width):
             new_row[i] = self._process_pixel(row[0:4, i-1:i+2])
         return new_row
 

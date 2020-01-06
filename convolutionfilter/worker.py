@@ -48,15 +48,18 @@ class _ConvWorker(Process):
         self._next_iter = np.empty((height + 2, width + 2, 3), dtype=np.uint8)
 
     def run(self) -> None:
-        self._iterations()
+        self._process_iterations()
 
-    def _iterations(self):
+    def _process_iterations(self):
         for _ in range(0, self._runs):
-            self._iteration()
+            self._process_next_iteration()
+            self._switch_iterations()
         self._result.copy_from(self._current_iter)
 
-    def _iteration(self):
+    def _process_next_iteration(self):
         self._process_rows()
+
+    def _switch_iterations(self):
         t = self._current_iter
         self._current_iter = self._next_iter
         self._next_iter = t

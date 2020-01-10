@@ -42,10 +42,10 @@ class _ConvWorker(Process):
 
         height = len(data)
         width = len(data[0])
-        self._height = range(1, height+1)
+        self._height = range(1, height+2)
         self._width = range(1, width+1)
         self._current_iter = np.pad(self._data, ((1, 1), (1, 1), (0, 0)), 'edge')
-        self._next_iter = np.empty((height + 2, width + 2, 3), dtype=np.uint8)
+        self._next_iter = np.pad(self._data, ((1, 1), (1, 1), (0, 0)), 'edge')
 
     def run(self) -> None:
         self._process_iterations()
@@ -53,11 +53,11 @@ class _ConvWorker(Process):
     def _process_iterations(self):
         for _ in range(0, self._runs):
             self._process_next_iteration()
-            self._switch_iterations()
         self._result.copy_from(self._current_iter)
 
     def _process_next_iteration(self):
         self._process_rows()
+        self._switch_iterations()
 
     def _switch_iterations(self):
         t = self._current_iter
@@ -65,15 +65,23 @@ class _ConvWorker(Process):
         self._next_iter = t
 
     def _process_rows(self) -> None:
+        self._process_row(0, self._current_iter[0:1])
+        # self._process_row(self._height+1, self._current_iter[0:1])
         for i in self._height:
             self._process_row(i, self._current_iter[i - 1:i + 2])
 
     def _process_row(self, i: int, row: np.ndarray) -> None:
         for j in self._width:
-            self._next_iter[i][j] = self._process_pixel(row[0:3, j - 1:j + 2])
+            if len(row) == 3:
+                self._next_iter[i][j] = self._process_pixel(row[0:3, j - 1:j + 2])
+            else:
+                self._next_iter[i][j] = self._process_pixel(row[0:2, j - 1:j + 2])
 
     def _process_pixel(self, pixel: np.ndarray) -> np.ndarray:
         return np.array([self._calculate_pixel(pixel[0:3, 0:3, i]) for i in (0, 1, 2)], dtype=np.uint8)
 
     def _calculate_pixel(self, value: np.ndarray) -> int:
-        return (value * self._matrix).sum() / self._matrix.sum()
+        if len(value) == 3:
+            return (value * self._matrix).sum() / self._matrix.sum()
+        else:
+            return (value * self._matrix[:2]).sum() / self._matrix[:2].sum()

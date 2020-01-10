@@ -1,4 +1,5 @@
 from math import ceil
+from multiprocessing import Manager
 from typing import List, Tuple
 
 import numpy as np
@@ -19,6 +20,7 @@ class Conv:
 
         self._new_img = None
         self._manager = _WorkersManager()
+        self._lock_manager = Manager()
         self._workers: List[Tuple[_ConvWorker, _WorkerResult]] = []
         self._chunk = int(ceil(len(self._img) / self._number_of_workers))
 
@@ -37,7 +39,7 @@ class Conv:
         print(f'worker {n} {start}-{start + self._chunk}')
         # noinspection PyUnresolvedReferences
         result: _WorkerResult = self._manager.result(chunk, len(self._img[0]))
-        worker = _ConvWorker(n, self._iterations, self._img[start:start + chunk], self._matrix, result)
+        worker = _ConvWorker(n, self._iterations, self._img[start:start + chunk], self._matrix, result, self._lock_manager.Lock(), self._lock_manager.Lock())
         worker.start()
         self._workers.append((worker, result))
 

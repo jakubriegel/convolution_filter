@@ -1,4 +1,4 @@
-from multiprocessing import Process
+from multiprocessing import Process, Lock
 from multiprocessing.managers import BaseManager
 
 import numpy as np
@@ -32,7 +32,9 @@ _WorkersManager.register('result', _WorkerResult)
 class _ConvWorker(Process):
 
     def __init__(
-            self, n: int, runs: int, data: np.ndarray, matrix: np.ndarray, result: _WorkerResult
+            self, n: int, runs: int,
+            data: np.ndarray, matrix: np.ndarray, result: _WorkerResult,
+            first_row_lock: Lock, last_row_lock: Lock
     ) -> None:
         super().__init__(name=f'worker {n}')
         self._runs = runs
@@ -40,16 +42,25 @@ class _ConvWorker(Process):
         self._matrix = matrix
         self._result = result
 
-        height = len(data)
+        self._height = len(data)
         width = len(data[0])
-        self._height = range(1, height+2)
-        self._width = range(1, width+1)
+        self._height_range = range(1, self._height)
+        self._width_range = range(1, width + 1)
         self._current_iter = np.pad(self._data, ((1, 1), (1, 1), (0, 0)), 'edge')
         self._next_iter = np.pad(self._data, ((1, 1), (1, 1), (0, 0)), 'edge')
         self._matrix_sum = self._matrix.sum()
 
+        self.first_row_lock = first_row_lock
+        self.last_row_lock = last_row_lock
+
     def run(self) -> None:
         self._process_iterations()
+
+    def first_row(self) -> np.ndarray:
+        return self._current_iter[1]
+
+    def last_row(self) -> np.ndarray:
+        return self._current_iter[self._height]
 
     def _process_iterations(self):
         for _ in range(0, self._runs):
@@ -66,23 +77,23 @@ class _ConvWorker(Process):
         self._next_iter = t
 
     def _process_rows(self) -> None:
-        self._process_row(0, self._current_iter[0:1])
-        # self._process_row(self._height+1, self._current_iter[0:1])
-        for i in self._height:
+        self.first_row_lock.acquire()
+        self._process_row(1, self._current_iter[0:3])
+        self.first_row_lock.release()
+
+        for i in self._height_range:
             self._process_row(i, self._current_iter[i - 1:i + 2])
 
+        self.last_row_lock.acquire()
+        self._process_row(self._height, self._current_iter[self._height-1:])
+        self.last_row_lock.release()
+
     def _process_row(self, i: int, row: np.ndarray) -> None:
-        for j in self._width:
-            if len(row) == 3:
-                self._next_iter[i][j] = self._process_pixel(row[0:3, j - 1:j + 2])
-            else:
-                self._next_iter[i][j] = self._process_pixel(row[0:2, j - 1:j + 2])
+        for j in self._width_range:
+            self._next_iter[i][j] = self._process_pixel(row[0:3, j - 1:j + 2])
 
     def _process_pixel(self, pixel: np.ndarray) -> np.ndarray:
         return np.array([self._calculate_pixel(pixel[0:3, 0:3, i]) for i in (0, 1, 2)], dtype=np.uint8)
 
     def _calculate_pixel(self, value: np.ndarray) -> int:
-        if len(value) == 3:
-            return (value * self._matrix).sum() / self._matrix_sum
-        else:
-            return (value * self._matrix[:2]).sum() / self._matrix[:2].sum()
+        return (value * self._matrix).sum() / self._matrix_sum

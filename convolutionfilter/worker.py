@@ -46,6 +46,7 @@ class _ConvWorker(Process):
         self._width = range(1, width+1)
         self._current_iter = np.pad(self._data, ((1, 1), (1, 1), (0, 0)), 'edge')
         self._next_iter = np.pad(self._data, ((1, 1), (1, 1), (0, 0)), 'edge')
+        self._matrix_sum = self._matrix.sum()
 
     def run(self) -> None:
         self._process_iterations()
@@ -82,6 +83,6 @@ class _ConvWorker(Process):
 
     def _calculate_pixel(self, value: np.ndarray) -> int:
         if len(value) == 3:
-            return (value * self._matrix).sum() / self._matrix.sum()
+            return (value * self._matrix).sum() / self._matrix_sum
         else:
             return (value * self._matrix[:2]).sum() / self._matrix[:2].sum()

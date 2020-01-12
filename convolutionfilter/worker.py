@@ -6,15 +6,26 @@ import numpy as np
 
 class _WorkerResult:
 
-    def __init__(self, width: int, height: int) -> None:
-        self._data = np.empty((width, height, 3), dtype=np.uint8)
+    def __init__(self, height: int, width: int) -> None:
+        self._data = np.empty((height, width, 3), dtype=np.uint8)
 
-    def _set_row(self, y: int, value: np.ndarray):
+    def set_row(self, y: int, value: np.ndarray):
         self._data[y] = value[1:-1]
 
     def copy_from(self, source: np.ndarray) -> None:
         for i in range(1, len(source)-1):
-            self._set_row(i-1, source[i])
+            self.set_row(i-1, source[i])
+
+    def get(self): return self._data
+
+
+class _WorkerRow:
+
+    def __init__(self, width: int) -> None:
+        self._data = np.empty((width, 3), dtype=np.uint8)
+
+    def set(self, value: np.ndarray):
+        self._data = value
 
     def get(self): return self._data
 
@@ -27,6 +38,7 @@ class _WorkersManager(BaseManager):
 
 
 _WorkersManager.register('result', _WorkerResult)
+_WorkersManager.register('row', _WorkerRow)
 
 
 class _ConvWorker(Process):
@@ -34,13 +46,16 @@ class _ConvWorker(Process):
     def __init__(
             self, n: int, runs: int,
             data: np.ndarray, matrix: np.ndarray, result: _WorkerResult,
-            first_row_lock: Lock, last_row_lock: Lock
+            first_row: _WorkerRow, last_row: _WorkerRow,
+            first_row_lock: Lock, last_row_lock: Lock,
+            top_border: _WorkerRow, bottom_border: _WorkerRow,
+            top_border_lock: Lock, bottom_border_lock: Lock
     ) -> None:
         super().__init__(name=f'worker {n}')
         self._runs = runs
         self._data = data
         self._matrix = matrix
-        self._result = result
+        self.result = result
 
         self._height = len(data)
         width = len(data[0])
@@ -50,22 +65,27 @@ class _ConvWorker(Process):
         self._next_iter = np.pad(self._data, ((1, 1), (1, 1), (0, 0)), 'edge')
         self._matrix_sum = self._matrix.sum()
 
+        self.first_row = first_row
+        self.last_row = last_row
         self.first_row_lock = first_row_lock
         self.last_row_lock = last_row_lock
+
+        self.top_border = top_border
+        self.bottom_border = bottom_border
+        self.top_border_lock = top_border_lock
+        self.bottom_border_lock = bottom_border_lock
+
+        if first_row is not None:
+            self.first_row.set(self._current_iter[0])
+        self.last_row.set(self._current_iter[self._height])
 
     def run(self) -> None:
         self._process_iterations()
 
-    def first_row(self) -> np.ndarray:
-        return self._current_iter[1]
-
-    def last_row(self) -> np.ndarray:
-        return self._current_iter[self._height]
-
     def _process_iterations(self):
         for _ in range(0, self._runs):
             self._process_next_iteration()
-        self._result.copy_from(self._current_iter)
+        self.result.copy_from(self._current_iter)
 
     def _process_next_iteration(self):
         self._process_rows()
@@ -77,15 +97,28 @@ class _ConvWorker(Process):
         self._next_iter = t
 
     def _process_rows(self) -> None:
-        self.first_row_lock.acquire()
+        if self.top_border is not None:
+            self.top_border_lock.acquire()
+            self._current_iter[0] = self.top_border.get()
+            self.top_border_lock.release()
+
         self._process_row(1, self._current_iter[0:3])
-        self.first_row_lock.release()
+        if self.first_row is not None:
+            self.first_row_lock.acquire()
+            self.first_row.set(self._current_iter[1])
+            self.first_row_lock.release()
 
         for i in self._height_range:
             self._process_row(i, self._current_iter[i - 1:i + 2])
 
+        if self.bottom_border is not None:
+            self.bottom_border_lock.acquire()
+            self._current_iter[self._height + 1] = self.bottom_border.get()
+            self.bottom_border_lock.release()
+
+        self._process_row(self._height, self._current_iter[self._height - 1:])
         self.last_row_lock.acquire()
-        self._process_row(self._height, self._current_iter[self._height-1:])
+        self.last_row.set(self._current_iter[self._height])
         self.last_row_lock.release()
 
     def _process_row(self, i: int, row: np.ndarray) -> None:

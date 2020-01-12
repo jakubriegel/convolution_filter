@@ -36,21 +36,22 @@ class Conv:
         worker = self._create_and_add_worker(0, processed_rows, self._chunk, None, None, None, None)
         processed_rows += self._chunk
 
-        for n in range(1, self._number_of_workers-1):
+        if self._number_of_workers > 1:
+            for n in range(1, self._number_of_workers-1):
+                worker = self._create_and_add_worker(
+                    n, processed_rows, self._chunk,
+                    worker.bottom_border, worker.bottom_border_lock,
+                    worker.last_row, worker.last_row_lock
+                )
+                processed_rows += self._chunk
+
             worker = self._create_and_add_worker(
-                n, processed_rows, self._chunk,
+                self._number_of_workers-1, processed_rows, len(self._img) - processed_rows,
                 worker.bottom_border, worker.bottom_border_lock,
                 worker.last_row, worker.last_row_lock
             )
-            processed_rows += self._chunk
-
-        worker = self._create_and_add_worker(
-            self._number_of_workers-1, processed_rows, len(self._img) - processed_rows,
-            worker.bottom_border, worker.bottom_border_lock,
-            worker.last_row, worker.last_row_lock
-        )
-        worker.bottom_border = None
-        worker.bottom_border_lock = None
+            worker.bottom_border = None
+            worker.bottom_border_lock = None
 
     def _create_and_add_worker(
             self, n: int, start: int, chunk: int,

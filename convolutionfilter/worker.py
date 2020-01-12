@@ -97,29 +97,28 @@ class _ConvWorker(Process):
         self._next_iter = t
 
     def _process_rows(self) -> None:
-        if self.top_border is not None:
-            self.top_border_lock.acquire()
-            self._current_iter[0] = self.top_border.get()
-            self.top_border_lock.release()
-
         self._process_row(1, self._current_iter[0:3])
-        if self.first_row is not None:
-            self.first_row_lock.acquire()
-            self.first_row.set(self._current_iter[1])
-            self.first_row_lock.release()
+        self._synchronize_top()
 
         for i in self._height_range:
             self._process_row(i, self._current_iter[i - 1:i + 2])
 
-        if self.bottom_border is not None:
-            self.bottom_border_lock.acquire()
-            self._current_iter[self._height + 1] = self.bottom_border.get()
-            self.bottom_border_lock.release()
-
         self._process_row(self._height, self._current_iter[self._height - 1:])
-        self.last_row_lock.acquire()
-        self.last_row.set(self._current_iter[self._height])
-        self.last_row_lock.release()
+        self._synchronize_bottom()
+
+    def _synchronize_top(self):
+        if self.top_border is not None:
+            with self.top_border_lock:
+                self._current_iter[0] = self.top_border.get()
+            with self.first_row_lock:
+                self.first_row.set(self._current_iter[1])
+
+    def _synchronize_bottom(self):
+        if self.bottom_border is not None:
+            with self.bottom_border_lock:
+                self._current_iter[self._height + 1] = self.bottom_border.get()
+            with self.last_row_lock:
+                self.last_row.set(self._current_iter[self._height])
 
     def _process_row(self, i: int, row: np.ndarray) -> None:
         for j in self._width_range:

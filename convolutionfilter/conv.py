@@ -32,6 +32,7 @@ class Conv:
     def _create_workers(self):
         processed_rows = 0
 
+        # noinspection PyTypeChecker
         worker = self._create_and_add_worker(0, processed_rows, self._chunk, None, None, None, None)
         processed_rows += self._chunk
 

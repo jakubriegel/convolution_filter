@@ -13,18 +13,21 @@ def measure_time(start: int) -> int:
     return current_time() - start
 
 
-def run_timed(task: Callable[[], None]) -> int:
+def run_timed(task: Callable[[], None]):
     start = current_time()
     task()
     elapsed = measure_time(start)
-    return elapsed
+    print(elapsed)
 
 
-def app(img_file: str, matrix: str, workers: int, iterations: int) -> None:
+def app(img_file: str, matrix: str, workers: int, iterations: int, timed: str):
     def run(): conv_from_file(img_file, MATRIX[matrix], workers, iterations)
-    elapsed = run_timed(run)
-    print(f'computation time {elapsed}ms')
+
+    if timed is not None:
+        run_timed(run)
+    else:
+        run()
 
 
 if __name__ == '__main__':
-    app(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]))
+    app(sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4]), sys.argv[5] if len(sys.argv) == 6 else None)

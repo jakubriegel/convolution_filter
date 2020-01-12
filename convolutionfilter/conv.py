@@ -31,45 +31,52 @@ class Conv:
 
     def _create_workers(self):
         processed_rows = 0
-        worker = self._create_worker(0, processed_rows, self._chunk, None, None, None, None)
-        self._workers.append(worker)
+
+        worker = self._create_and_add_worker(0, processed_rows, self._chunk, None, None, None, None)
         processed_rows += self._chunk
+
         for n in range(1, self._number_of_workers-1):
-            worker = self._create_worker(
+            worker = self._create_and_add_worker(
                 n, processed_rows, self._chunk,
                 worker.bottom_border, worker.bottom_border_lock,
                 worker.last_row, worker.last_row_lock
             )
-            self._workers.append(worker)
             processed_rows += self._chunk
-        worker = self._create_worker(
+
+        worker = self._create_and_add_worker(
             self._number_of_workers-1, processed_rows, len(self._img) - processed_rows,
             worker.bottom_border, worker.bottom_border_lock,
             worker.last_row, worker.last_row_lock
         )
         worker.bottom_border = None
         worker.bottom_border_lock = None
-        self._workers.append(worker)
 
-    def _create_worker(
+    def _create_and_add_worker(
             self, n: int, start: int, chunk: int,
             first_row: _WorkerRow, first_row_lock: Lock,
             top_border: _WorkerRow, top_border_lock: Lock
     ) -> _ConvWorker:
-        print(f'worker {n} {start}-{start + self._chunk}')
-
-        # noinspection PyUnresolvedReferences
-        result: _WorkerResult = self._manager.result(chunk, len(self._img[0]))
-        last_row = self._manager.row(len(self._img[0])+2)
+        result = self._create_result(chunk)
+        last_row = self._create_row()
         last_row_lock = self._lock_manager.Lock()
-        bottom_border = self._manager.row(len(self._img[0])+2)
+        bottom_border = self._create_row()
         bottom_border_lock = self._lock_manager.Lock()
 
-        return _ConvWorker(
+        worker = _ConvWorker(
             n, self._iterations, self._img[start:start + chunk], self._matrix, result,
             first_row, last_row, first_row_lock, last_row_lock,
             top_border, bottom_border, top_border_lock, bottom_border_lock
         )
+        self._workers.append(worker)
+        return worker
+
+    def _create_result(self, height: int) -> _WorkerResult:
+        # noinspection PyUnresolvedReferences
+        return self._manager.result(height, len(self._img[0]))
+
+    def _create_row(self) -> _WorkerRow:
+        # noinspection PyUnresolvedReferences
+        return self._manager.row(len(self._img[0])+2)
 
     def _start_workers(self):
         for worker in self._workers:

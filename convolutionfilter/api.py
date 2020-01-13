@@ -8,7 +8,7 @@ def conv_from_file(
         img_file: str, matrix: np.ndarray, number_of_workers: int, iterations: int, result_file: str = None
 ) -> None:
     img = np.asarray(Image.open(img_file))
-    conv(img, matrix, number_of_workers, iterations)
+    conv(img, matrix, number_of_workers, iterations, result_file)
 
 
 def conv(

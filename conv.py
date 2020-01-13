@@ -23,16 +23,17 @@ def run_timed(task: Callable[[], None]):
 def run_benchmark(img_file: str, max_workers: int, max_iterations: int):
     def run(w: int, i: int): conv_from_file(img_file, MATRIX['blur1'], w, i, f'result_{w}_{i}')
     WORKERS_STEP = 2
-    ITERATIONS_STEP = 10
+    ITERATIONS_STEP = 2
 
     result = run_timed(lambda: run(1, 1))
     print(f'{1} {1} {result}')
     for workers in range(2, max_workers+1, WORKERS_STEP):
         result = run_timed(lambda: run(workers, 1))
         print(f'{workers} {1} {result}')
-        for iterations in range(10, max_iterations+1, ITERATIONS_STEP):
+        for iterations in range(2, max_iterations+1, ITERATIONS_STEP):
             result = run_timed(lambda: run(workers, iterations))
             print(f'{workers} {iterations} {result}')
+            time.sleep(2)
 
 
 def app(img_file: str, matrix: str, workers: int, iterations: int, timed: str):

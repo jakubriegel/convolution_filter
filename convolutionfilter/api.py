@@ -4,15 +4,19 @@ from PIL import Image
 from convolutionfilter.conv import Conv
 
 
-def conv_from_file(img_file: str, matrix: np.ndarray, number_of_workers: int, iterations: int) -> None:
+def conv_from_file(
+        img_file: str, matrix: np.ndarray, number_of_workers: int, iterations: int, result_file: str = None
+) -> None:
     img = np.asarray(Image.open(img_file))
     conv(img, matrix, number_of_workers, iterations)
 
 
-def conv(img: np.ndarray, matrix: np.ndarray, number_of_workers: int = 1, iterations: int = 1) -> None:
+def conv(
+        img: np.ndarray, matrix: np.ndarray, number_of_workers: int = 1, iterations: int = 1, result_file: str = None
+) -> None:
     f = Conv(img, matrix, number_of_workers, iterations)
     f.apply()
-    f.save_result()
+    f.save_result(result_file)
 
 
 MATRIX = {

@@ -10,7 +10,9 @@ from convolutionfilter.worker import _WorkersManager, _ConvWorker, _WorkerResult
 
 class Conv:
     EXTENSION = '.ppm'
-    RESULT_FILE_NAME = f'result{EXTENSION}'
+    @staticmethod
+    def result_file_name(name: str = None):
+        return f'{name if name is not None else "result"}{Conv.EXTENSION}'
 
     def __init__(self, img: np.ndarray, matrix: np.ndarray, number_of_workers: int, iterations: int) -> None:
         self._img = img
@@ -92,5 +94,5 @@ class Conv:
             else:
                 self._new_img = np.concatenate((self._new_img, worker.result.get()))
 
-    def save_result(self):
-        Image.fromarray(self._new_img).save(Conv.RESULT_FILE_NAME)
+    def save_result(self, name: str = None):
+        Image.fromarray(self._new_img).save(Conv.result_file_name(name))

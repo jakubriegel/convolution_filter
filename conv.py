@@ -21,7 +21,7 @@ def run_timed(task: Callable[[], None]):
 
 
 def run_benchmark(img_file: str, max_workers: int, max_iterations: int):
-    def run(w: int, i: int): conv_from_file(img_file, MATRIX['blur1'], w, i)
+    def run(w: int, i: int): conv_from_file(img_file, MATRIX['blur1'], w, i, f'result_{w}_{i}')
     WORKERS_STEP = 2
     ITERATIONS_STEP = 10
 

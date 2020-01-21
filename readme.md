@@ -28,22 +28,22 @@ The application uses Python `multiprocessing` module for concurrency and `numpy.
 
 ## run it
 To run the app first create the virtual environment:
-```shell script
+```
 python -m venv cf-venv
 ```
 
 Then start the environment:
-```shell script
+```
 source cf-venv/bin/activate 
 ```
 
 Next install dependencies:
-```shell script
+```
 pip install -r requirements.txt
 ```
 
 Start the app:
-```shell script
+```
 python conv.py [ARGS]
 ```
 
@@ -53,7 +53,7 @@ python conv.py [ARGS]
 In this mode the app applies convolution filer to given image.
 
 #### command
-```shell script
+```
 python conv.py [IMAGE] [BLUR] [NUMBER_OF_WORKERS] [MEASURE_TIME?]
 ```
 
@@ -64,7 +64,7 @@ python conv.py [IMAGE] [BLUR] [NUMBER_OF_WORKERS] [MEASURE_TIME?]
 * MEASURE_TIME - optional, `t` for printing execution time
 
 #### example
-```shell script
+```
 python conv.py image.ppm blur1 8 1 t
 ```
 
@@ -74,7 +74,7 @@ In this mode the app applies convolution filer many times on consecutive numbers
 Time results are being printed as `csv` to standard output. 
 
 #### command
-```shell script
+```
 python conv.py bench [IMAGE] [MAX_WORKERS] [MAX_ITERATIONS]
 ```
 
@@ -84,7 +84,7 @@ python conv.py bench [IMAGE] [MAX_WORKERS] [MAX_ITERATIONS]
 * MAX_ITERATIONS - maximal number of iteration to run benchmark on
 
 #### example
-```shell script
+```
 python conv.py bench image.ppm 12 50
 ```
 
@@ -110,7 +110,7 @@ Workers apply filter on each pixel in the loop. Before processing next iteration
 * macOS Catalina
 
 ### parameters
-```shell script
+```
 MAX_WORKERS=24
 MAX_ITERATIONS=10
 ```

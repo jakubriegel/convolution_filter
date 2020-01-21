@@ -1,6 +1,6 @@
 # convolution filter
 ## about
-Concurrent implementation of images convolution filter. 
+Concurrent implementation of `.ppm` images convolution filter. 
 The application uses Python `multiprocessing` module for concurrency and `numpy.array` for image processing.
 
 ## table of contents
@@ -18,6 +18,8 @@ The application uses Python `multiprocessing` module for concurrency and `numpy.
       - [arguments](#arguments-1)
       - [example](#example-1)
   * [algorithm](#algorithm)
+    + [the filter](#the-filter)
+    + [concurrency](#concurrency)
   * [sample benchmark](#sample-benchmark)
     + [machine](#machine)
     + [parameters](#parameters)
@@ -87,7 +89,19 @@ python conv.py bench image.ppm 12 50
 ```
 
 ## algorithm
-tba
+## the filter
+Convolution filter is used to blur or sharpen images. This effect is achieved by substituting each pixel by weighted arithmetic mean of it and its neighbours.
+The type and strength of filter can be adjusted using different weights. In this implementation they are represented as matrix stored in `conv.api.MATRIX`.
+
+## concurrency
+Result of computation is a set of results of computing individual pixels. Each pixel result is depending only of state of its neighbours.
+That makes this problem perfect for concurrent computations. 
+
+Source image is divided into `n` slices, where `n` is the number of concurrent workers to use. Each slice is cut on `y` axis (so rows are not affected).
+They a new system process is being created for every slice. In order to process edge pixels, each slice is being padded by edge values of previous and next slice.
+Slices are copies of original image and are stored in each process's memory.
+ 
+Workers apply filter on each pixel in the loop. Before processing next iterations the worker synchronizes edge values with its neighbours, so that there is no inconsistency in end result.
 
 ## sample benchmark
 ### machine
